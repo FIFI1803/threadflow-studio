@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -8,6 +9,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { ThreadInput } from "@/components/ThreadInput";
 import { ScriptEditor } from "@/components/ScriptEditor";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { Button } from "@/components/ui/button";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface Profile {
@@ -17,6 +19,17 @@ interface Profile {
   avatar_url: string | null;
   credits: number;
   tier: string;
+}
+
+interface Scene {
+  id: number;
+  dialogue: string;
+  visualInstruction: string;
+  duration: string;
+}
+
+interface GeneratedScript {
+  scenes: Scene[];
 }
 
 // Mock scenes data for the editor
@@ -60,14 +73,17 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const [generatedScript, setGeneratedScript] = useState<GeneratedScript | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (!session) {
         navigate("/auth");
       } else if (session?.user) {
@@ -80,7 +96,7 @@ export default function Dashboard() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (!session) {
         navigate("/auth");
       } else if (session?.user) {
@@ -104,7 +120,7 @@ export default function Dashboard() {
       }
 
       setProfile(data);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
       setLoading(false);
@@ -117,19 +133,28 @@ export default function Dashboard() {
     setGenerating(true);
 
     try {
-      // Save project to database
-      const { error } = await supabase.from("projects").insert({
+      // 1. Invoke the generate-script edge function
+      const { data: scriptData, error: functionError } = await supabase.functions.invoke('generate-script', {
+        body: { thread_content: content, video_vibe: vibe }
+      });
+
+      if (functionError) throw new Error(functionError.message || "Failed to call AI service");
+      if (!scriptData) throw new Error("No data returned from AI service");
+
+      const generatedScript = scriptData;
+      setGeneratedScript(generatedScript);
+
+      // 2. Save project to database
+      const { error: dbError } = await supabase.from("projects").insert({
         user_id: user.id,
         thread_content: content,
         video_vibe: vibe,
         title: content.substring(0, 50) + "...",
-        status: "processing",
+        status: "completed", // Set to completed since we generated it successfully
+        script_data: generatedScript
       });
 
-      if (error) throw error;
-
-      // Simulate AI processing
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      if (dbError) throw dbError;
 
       toast({
         title: "Blueprint generated!",
@@ -137,10 +162,11 @@ export default function Dashboard() {
       });
 
       setShowEditor(true);
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Generation error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to generate blueprint",
+        description: error instanceof Error ? error.message : "Failed to generate blueprint",
         variant: "destructive",
       });
     } finally {
@@ -153,15 +179,40 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden">
-      <AppSidebar user={user} profile={profile} />
+    <div className="relative flex h-screen w-full overflow-hidden">
+      <AppSidebar
+        user={user}
+        profile={profile}
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+      />
 
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-hidden flex flex-col relative z-10 transition-all duration-300">
+        {/* Mobile Header with Hamburger */}
+        <div className="lg:hidden flex items-center justify-between p-4 border-b border-border/50">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(true)}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Open menu"
+          >
+            <Menu className="w-6 h-6" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <span className="text-white text-xs font-bold">TF</span>
+            </div>
+            <span className="font-bold gradient-text">ThreadFlow</span>
+          </div>
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+
         <AnimatePresence mode="wait">
-          {showEditor ? (
+          {showEditor && generatedScript ? (
             <ScriptEditor
               key="editor"
-              scenes={mockScenes}
+              scenes={generatedScript.scenes || mockScenes}
               onBack={() => setShowEditor(false)}
             />
           ) : (
@@ -170,7 +221,7 @@ export default function Dashboard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="h-full overflow-y-auto p-8"
+              className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8"
             >
               <DashboardHeader
                 displayName={profile?.display_name || user?.email?.split("@")[0] || "Creator"}

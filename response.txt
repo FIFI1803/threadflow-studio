@@ -1,0 +1,13 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 1353
+Connection: keep-alive
+access-control-allow-origin: *
+access-control-allow-headers: authorization, x-client-info, apikey, content-type
+vary: Accept-Encoding
+date: Sat, 31 Jan 2026 19:22:04 GMT
+X-Kong-Upstream-Latency: 5069
+X-Kong-Proxy-Latency: 2
+Via: kong/2.8.1
+
+{"scenes":[{"id":1,"dialogue":"Are you ready to brew the perfect cup of coffee? Let's start with the essentials!","visualInstruction":"Show a lively intro with people excited about coffee.","duration":"3s"},{"id":2,"dialogue":"Step 1: Buy good beans! Choose high-quality coffee beans to set the foundation for flavor.","visualInstruction":"Display a selection of premium coffee bean bags, with someone picking one up and smelling it.","duration":"6s"},{"id":3,"dialogue":"Step 2: Grind fresh. Freshly ground coffee releases the best aroma and taste. Don't pre-grind!","visualInstruction":"Close-up of beans being poured into a grinder, then a hand pressing the grinder button.","duration":"6s"},{"id":4,"dialogue":"Step 3: Use filtered water. Good water quality is crucial for a great brew.","visualInstruction":"Person filling a kettle with filtered water from a purifier.","duration":"5s"},{"id":5,"dialogue":"Bonus Tip: Experiment with ratios! Tweaking grind size and water amount can perfect your taste.","visualInstruction":"Show someone adjusting a coffee machine and pouring a perfect cup.","duration":"8s"},{"id":6,"dialogue":"And there you have it! The road to perfect coffee, one brew at a time.","visualInstruction":"End with someone sipping coffee and looking content, with graphics displaying: 'Enjoy Your Perfect Brew!'","duration":"5s"}]}
