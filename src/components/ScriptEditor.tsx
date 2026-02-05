@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Image, Play, Pause, Volume2, FileText } from "lucide-react";
+import { ArrowLeft, Image, Play, Pause, Volume2, FileText, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 interface Scene {
@@ -21,6 +22,30 @@ export function ScriptEditor({ scenes, onBack }: ScriptEditorProps) {
   const [isPro, setIsPro] = useState(false);
   const [activeScene, setActiveScene] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const copyFullScript = async () => {
+    const fullScript = scenes
+      .map((s) => `Scene ${s.id} (${s.duration}):\n"${s.dialogue}"\n[Visual: ${s.visualInstruction}]`)
+      .join('\n\n---\n\n');
+    
+    try {
+      await navigator.clipboard.writeText(fullScript);
+      setCopied(true);
+      toast({
+        title: "Copied!",
+        description: "Full script copied to clipboard",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        title: "Failed to copy",
+        description: "Please try selecting and copying manually",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <motion.div
@@ -44,8 +69,25 @@ export function ScriptEditor({ scenes, onBack }: ScriptEditorProps) {
           <h2 className="text-lg md:text-xl font-semibold truncate">Script Editor</h2>
         </div>
 
-        {/* Tier Toggle */}
+        {/* Actions */}
         <div className="flex items-center gap-2 md:gap-4">
+          {/* Copy Script Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={copyFullScript}
+            className="gap-2"
+            aria-label="Copy full script"
+          >
+            {copied ? (
+              <Check className="w-4 h-4 text-green-500" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+            <span className="hidden sm:inline">{copied ? "Copied!" : "Copy Script"}</span>
+          </Button>
+
+          {/* Tier Toggle */}
           <div className="glass-card-subtle px-2 md:px-4 py-1.5 md:py-2 flex items-center gap-2 md:gap-3">
             <span className={cn(
               "text-xs md:text-sm font-medium transition-colors hidden sm:inline",
