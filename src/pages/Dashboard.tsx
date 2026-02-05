@@ -128,6 +128,16 @@ export default function Dashboard() {
   };
 
   const handleGenerate = async (content: string, vibe: string) => {
+    // Check if user has credits
+    if ((profile?.credits ?? 0) <= 0) {
+      toast({
+        title: "Out of credits",
+        description: "You've used all your free credits. Upgrade to continue creating.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!user) return;
 
     setGenerating(true);
@@ -156,9 +166,22 @@ export default function Dashboard() {
 
       if (dbError) throw dbError;
 
+      // 3. Deduct credit after successful generation
+      const { error: creditError } = await supabase
+        .from("profiles")
+        .update({ credits: (profile?.credits ?? 0) - 1 })
+        .eq("user_id", user.id);
+
+      if (creditError) {
+        console.error("Failed to deduct credit:", creditError);
+      } else {
+        // Refresh profile to update credits in UI
+        await fetchProfile(user.id);
+      }
+
       toast({
         title: "Blueprint generated!",
-        description: "Your production script is ready for review.",
+        description: `Your production script is ready. (${(profile?.credits ?? 1) - 1} credits remaining)`,
       });
 
       setShowEditor(true);
