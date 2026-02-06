@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +17,9 @@ interface ThreadInputProps {
   isLoading: boolean;
 }
 
+const MIN_CHARS = 50;
+const MAX_CHARS = 10000;
+
 const vibeOptions = [
   { value: "cinematic", label: "🎬 Cinematic", description: "Epic, dramatic pacing" },
   { value: "minimalist", label: "✨ Minimalist", description: "Clean, simple cuts" },
@@ -28,6 +31,11 @@ export function ThreadInput({ onGenerate, isLoading }: ThreadInputProps) {
   const [vibe, setVibe] = useState("cinematic");
   const [charCount, setCharCount] = useState(0);
 
+  const isTooShort = charCount > 0 && charCount < MIN_CHARS;
+  const isTooLong = charCount > MAX_CHARS;
+  const isValidLength = charCount >= MIN_CHARS && charCount <= MAX_CHARS;
+  const isNearLimit = charCount > MAX_CHARS * 0.9 && charCount <= MAX_CHARS;
+
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     setContent(text);
@@ -35,15 +43,25 @@ export function ThreadInput({ onGenerate, isLoading }: ThreadInputProps) {
   };
 
   const handleSubmit = () => {
-    if (content.trim()) {
+    if (content.trim() && isValidLength) {
       onGenerate(content, vibe);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && content.trim() && !isLoading) {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && content.trim() && !isLoading && isValidLength) {
       handleSubmit();
     }
+  };
+
+  const getValidationMessage = () => {
+    if (isTooShort) {
+      return `Add ${MIN_CHARS - charCount} more characters (minimum ${MIN_CHARS})`;
+    }
+    if (isTooLong) {
+      return `${charCount - MAX_CHARS} characters over limit (maximum ${MAX_CHARS.toLocaleString()})`;
+    }
+    return null;
   };
 
   return (
@@ -61,9 +79,12 @@ export function ThreadInput({ onGenerate, isLoading }: ThreadInputProps) {
             </label>
             <span className={cn(
               "text-xs transition-colors duration-300",
-              charCount > 1000 ? "text-orange-400" : "text-muted-foreground"
+              isTooLong && "text-red-400 font-medium",
+              isNearLimit && "text-orange-400",
+              isTooShort && "text-yellow-400",
+              isValidLength && !isNearLimit && "text-muted-foreground"
             )}>
-              {charCount} characters
+              {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
             </span>
           </div>
           <Textarea
@@ -72,14 +93,38 @@ export function ThreadInput({ onGenerate, isLoading }: ThreadInputProps) {
             onChange={handleContentChange}
             onKeyDown={handleKeyDown}
             placeholder="Drop your thread here... We'll analyze it and create a production-ready script with scene breakdowns, visual instructions, and timing."
-            className="min-h-[180px] md:min-h-[220px] bg-secondary/30 border-border/50 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 resize-none text-sm md:text-base transition-all duration-300 backdrop-blur-sm"
+            className={cn(
+              "min-h-[180px] md:min-h-[220px] bg-secondary/30 border-border/50 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 resize-none text-sm md:text-base transition-all duration-300 backdrop-blur-sm",
+              isTooLong && "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/10",
+              isTooShort && "border-yellow-500/30 focus:border-yellow-500/50"
+            )}
             disabled={isLoading}
             aria-label="Thread content"
             aria-describedby="thread-hint"
+            aria-invalid={isTooShort || isTooLong}
           />
-          <p id="thread-hint" className="text-xs text-muted-foreground mt-2">
-            Tip: Press Cmd/Ctrl + Enter to generate
-          </p>
+          
+          {/* Validation message */}
+          {getValidationMessage() && (
+            <motion.p
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={cn(
+                "text-xs mt-2 flex items-center gap-1.5",
+                isTooLong && "text-red-400",
+                isTooShort && "text-yellow-400"
+              )}
+            >
+              <AlertCircle className="w-3 h-3" />
+              {getValidationMessage()}
+            </motion.p>
+          )}
+          
+          {!getValidationMessage() && (
+            <p id="thread-hint" className="text-xs text-muted-foreground mt-2">
+              Tip: Press Cmd/Ctrl + Enter to generate
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
@@ -110,7 +155,7 @@ export function ThreadInput({ onGenerate, isLoading }: ThreadInputProps) {
 
           <Button
             onClick={handleSubmit}
-            disabled={!content.trim() || isLoading}
+            disabled={!content.trim() || isLoading || !isValidLength}
             className="glow-button w-full sm:w-auto bg-gradient-to-br from-primary to-accent hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-6 md:px-8 h-11 md:h-12 text-base md:text-lg transition-all"
             aria-busy={isLoading}
           >
