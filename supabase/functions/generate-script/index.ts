@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     
     The user wants a "${video_vibe || 'cinematic'}" vibe.
     
-    Output NOTTING but a raw JSON object with this structure:
+    Output NOTHING but a raw JSON object with this structure:
     {
       "scenes": [
         {
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     })
 
     const data = await response.json()
-    
+
     if (data.error) {
       throw new Error(data.error.message)
     }
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     console.error('Error generating script:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
+      {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
