@@ -3,7 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { DashboardLayout } from "./components/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
+import MyScripts from "./pages/MyScripts";
+import VideoLibrary from "./pages/VideoLibrary";
+import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -16,11 +20,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/scripts" element={<Dashboard />} />
-          <Route path="/library" element={<Dashboard />} />
-          <Route path="/settings" element={<Dashboard />} />
+          <Route path="/" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
+          <Route path="/scripts" element={<DashboardLayout><MyScripts /></DashboardLayout>} />
+          <Route path="/library" element={<DashboardLayout><VideoLibrary /></DashboardLayout>} />
+          <Route path="/settings" element={<DashboardLayout><Settings /></DashboardLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -192,17 +192,14 @@ export function AppSidebar({ user, profile, open = true, onOpenChange }: AppSide
   return (
     <>
       {/* Desktop Sidebar */}
-      <motion.aside
-        initial={{ x: -20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
+      <aside
         className={cn(
           "hidden lg:flex flex-col h-screen bg-sidebar border-r border-border/50 transition-all duration-300",
           collapsed ? "w-20" : "w-64"
         )}
       >
         <SidebarContent />
-      </motion.aside>
+      </aside>
 
       {/* Mobile Sidebar */}
       <AnimatePresence>
