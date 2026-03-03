@@ -91,7 +91,7 @@ export function AppSidebar({ user, profile, open = true, onOpenChange }: AppSide
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1" role="navigation" aria-label="Main navigation">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto" role="navigation" aria-label="Main navigation">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const navButton = (
@@ -198,7 +198,7 @@ export function AppSidebar({ user, profile, open = true, onOpenChange }: AppSide
           collapsed ? "w-20" : "w-64"
         )}
       >
-        <SidebarContent />
+        {SidebarContent()}
       </aside>
 
       {/* Mobile Sidebar */}
@@ -216,13 +216,13 @@ export function AppSidebar({ user, profile, open = true, onOpenChange }: AppSide
 
             {/* Sidebar */}
             <motion.aside
-              initial={{ x: -280 }}
+              initial={{ x: -256 }}
               animate={{ x: 0 }}
-              exit={{ x: -280 }}
+              exit={{ x: -256 }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               className="fixed left-0 top-0 bottom-0 w-64 bg-sidebar border-r border-border/50 z-50 flex flex-col lg:hidden"
             >
-              <SidebarContent />
+              {SidebarContent()}
             </motion.aside>
           </>
         )}
